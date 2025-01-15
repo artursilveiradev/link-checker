@@ -1,6 +1,8 @@
 package main
 
 import (
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"reflect"
 	"testing"
@@ -42,5 +44,38 @@ func TestExtractLinks(t *testing.T) {
 
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("got: %v, want: %v", got, want)
+	}
+}
+
+func TestCheckLink(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/ok":
+			w.WriteHeader(http.StatusOK)
+		case "/notfound":
+			w.WriteHeader(http.StatusNotFound)
+		default:
+			w.WriteHeader(http.StatusInternalServerError)
+		}
+	}))
+	defer server.Close()
+
+	tests := []struct {
+		url      string
+		expected string
+	}{
+		{server.URL + "/ok", "200 OK"},
+		{server.URL + "/notfound", "404 Not Found"},
+		{server.URL + "/error", "500 Internal Server Error"},
+		{"http://invalid-url", "Erro"},
+	}
+
+	for _, test := range tests {
+		t.Run(test.url, func(t *testing.T) {
+			result := checkLink(test.url)
+			if result != test.expected {
+				t.Errorf("checkLink(%q) = %q; want %q", test.url, result, test.expected)
+			}
+		})
 	}
 }

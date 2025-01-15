@@ -1,6 +1,7 @@
 package main
 
 import (
+	"net/http"
 	"os"
 	"strings"
 
@@ -43,4 +44,14 @@ func extractLinks(filePath string) ([]string, error) {
 	}
 	crawler(doc)
 	return links, nil
+}
+
+// checkLink checks the status of a link.
+func checkLink(url string) string {
+	resp, err := http.Head(url)
+	if err != nil {
+		return "Erro"
+	}
+	defer resp.Body.Close()
+	return resp.Status
 }
