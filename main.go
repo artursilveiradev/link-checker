@@ -1,12 +1,18 @@
 package main
 
 import (
+	"encoding/json"
 	"net/http"
 	"os"
 	"strings"
 
 	"golang.org/x/net/html"
 )
+
+type LinkStatus struct {
+	URL    string `json:"url"`
+	Status string `json:"status"`
+}
 
 func main() {
 
@@ -54,4 +60,13 @@ func checkLink(url string) string {
 	}
 	defer resp.Body.Close()
 	return resp.Status
+}
+
+// saveReport saves the report to a file.
+func saveReport(report []LinkStatus, filePath string) error {
+	data, err := json.MarshalIndent(report, "", "  ")
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(filePath, data, 0644)
 }

@@ -79,3 +79,41 @@ func TestCheckLink(t *testing.T) {
 		})
 	}
 }
+
+func TestSaveReport(t *testing.T) {
+	report := []LinkStatus{
+		{URL: "https://www.google.com", Status: "200 OK"},
+		{URL: "https://www.example.com", Status: "404 Not Found"},
+	}
+
+	tempFile, err := os.CreateTemp("", "report*.json")
+	if err != nil {
+		t.Fatalf("failed to create temp file: %v", err)
+	}
+	defer os.Remove(tempFile.Name())
+
+	err = saveReport(report, tempFile.Name())
+	if err != nil {
+		t.Fatalf("failed to save report: %v", err)
+	}
+
+	content, err := os.ReadFile(tempFile.Name())
+	if err != nil {
+		t.Fatalf("failed to read content from temp file: %v", err)
+	}
+
+	expected := `[
+  {
+    "url": "https://www.google.com",
+    "status": "200 OK"
+  },
+  {
+    "url": "https://www.example.com",
+    "status": "404 Not Found"
+  }
+]`
+
+	if string(content) != expected {
+		t.Errorf("got: %s, want: %s", content, expected)
+	}
+}
