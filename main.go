@@ -2,9 +2,13 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
+	"fmt"
 	"net/http"
 	"os"
+	"os/signal"
 	"strings"
+	"time"
 
 	"golang.org/x/net/html"
 )
@@ -15,7 +19,61 @@ type LinkStatus struct {
 }
 
 func main() {
+	signalChan := make(chan os.Signal, 1)
+	signal.Notify(signalChan, os.Interrupt)
+	go func() {
+		<-signalChan
+		fmt.Println("\nProcess interrupted by user.")
+		os.Exit(1)
+	}()
 
+	inputFile := flag.String("file", "", "Path to the input HTML file")
+	outputFile := flag.String("output", "report.json", "Path to the output JSON file")
+	verbose := flag.Bool("verbose", false, "Print verbose output")
+	flag.Parse()
+
+	if *inputFile == "" {
+		fmt.Println("Error: Missing required flag -file")
+		os.Exit(1)
+	}
+
+	if _, err := os.Stat(*inputFile); os.IsNotExist(err) {
+		fmt.Printf("Error: The file %s does not exist.\n", *inputFile)
+		os.Exit(1)
+	}
+
+	start := time.Now()
+
+	if *verbose {
+		fmt.Printf("Extracting links from %s...\n", *inputFile)
+	}
+	links, err := extractLinks(*inputFile)
+	if err != nil {
+		fmt.Printf("Error: Failed to extract links from %s. Details: %v\n", *inputFile, err)
+		os.Exit(1)
+	}
+	fmt.Printf("Found %d external links.\n", len(links))
+
+	if *verbose {
+		fmt.Println("Checking the status of each link...")
+	}
+	var results []LinkStatus
+	for _, link := range links {
+		if *verbose {
+			fmt.Printf("Checking link: %s\n", link)
+		}
+		status := checkLink(link)
+		results = append(results, LinkStatus{URL: link, Status: status})
+	}
+
+	if err := saveReport(results, *outputFile); err != nil {
+		fmt.Printf("Error: Failed to save the report to %s. Details: %v\n", *outputFile, err)
+		os.Exit(1)
+	}
+	fmt.Printf("Report successfully saved to: %s\n", *outputFile)
+
+	elapsed := time.Since(start)
+	fmt.Printf("Process completed in %.2f seconds.\n", elapsed.Seconds())
 }
 
 // extractLinks extracts links from an HTML file.
