@@ -2,6 +2,8 @@
 
 A lightweight Golang command-line application to extract and verify the HTTP status of external links in HTML files, with detailed reporting in JSON format
 
+![CI](https://github.com/artursilveiradev/link-checker/actions/workflows/ci.yml/badge.svg)
+
 ## Build
 
 Compile the application:
