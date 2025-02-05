@@ -34,3 +34,21 @@ link-checker -file example.html -output custom-report-name.json
 ```
 link-checker -file example.html -verbose
 ```
+
+## Report example
+```json
+[
+  {
+    "url": "https://www.google.com",
+    "status": "200 OK"
+  },
+  {
+    "url": "https://www.example.com",
+    "status": "200 OK"
+  },
+  {
+    "url": "https://invalid-link.com",
+    "status": "Erro"
+  }
+]
+```
